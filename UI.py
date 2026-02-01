@@ -5,7 +5,7 @@ import datetime
 app = Flask(__name__)
 
 # --- CONFIGURATION ---
-RAILWAY_URL = "postgresql://postgres:zMUdeZixVuuoibISeRvqLzZwWxDyVlzs@maglev.proxy.rlwy.net:23110/railway"
+RAILWAY_URL = "postgresql://postgres:UVyFfDeuDSVAzYZVgmqdAkRnIamATNwE@caboose.proxy.rlwy.net:35456/railway"
 
 # --- DATABASE HELPER ---
 def get_db_connection():
@@ -66,4 +66,5 @@ def get_sensor_data():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
     app.run(host="0.0.0.0", port=port)
+
 
