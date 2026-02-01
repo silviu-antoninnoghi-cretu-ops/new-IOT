@@ -505,87 +505,61 @@
         });
     });
 
-    // --- FUNCTII DE FETCHING (COMUNICARE CU SERVERUL) ---
-async function fetchData() {
-    try {
-        // Cache busting pentru a forța date noi
-        const url = '/api/sensor_data?t=' + new Date().getTime();
-        const response = await fetch(url);
-        if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
-        
-        const json = await response.json();
-        
-        // Mapare corectă conform structurii tale din server.py
-        rawData = json.map(r => {
-            let item = Array.isArray(r) ? { 
-                id: r[0], temperature: r[1], humidity: r[2], 
-                mq2: r[3], mq9: r[4], mq135: r[5], timestamp: r[6] 
-            } : r;
+            // --- FUNCTII DE FETCHING (COMUNICARE CU SERVERUL) ---
+    async function fetchData() {
+        try {
+            // Cache busting pentru a forța date noi
+            const url = '/api/sensor_data?t=' + new Date().getTime();
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
+            
+            const json = await response.json();
+            
+            // Mapare corectă conform structurii tale din server.py
+            rawData = json.map(r => {
+                let item = Array.isArray(r) ? { 
+                    id: r[0], temperature: r[1], humidity: r[2], 
+                    mq2: r[3], mq9: r[4], mq135: r[5], timestamp: r[6] 
+                } : r;
 
-            item.temperature = parseFloat(item.temperature) || 0;
-            item.humidity = parseFloat(item.humidity) || 0;
-            item.timestampObj = new Date(item.timestamp); 
-            item.timestampString = item.timestampObj.toLocaleString("ro-RO");
-            return item;
-        });
+                item.temperature = parseFloat(item.temperature) || 0;
+                item.humidity = parseFloat(item.humidity) || 0;
+                item.timestampObj = new Date(item.timestamp); 
+                item.timestampString = item.timestampObj.toLocaleString("ro-RO");
+                return item;
+            });
 
-        rawData.sort((a, b) => a.timestampObj - b.timestampObj);
-
-        // REPARARE: Nu mai forțăm data dacă userul a debifat Live Scroll
-        if (document.getElementById('liveScroll').checked) {
-            fpTo.setDate(new Date()); 
-        }
-
-        document.getElementById('loadingOverlay').style.display = 'none';
-        updateStatus(true);
-        updateDashboardCards(); 
-        applyFilters(); 
-
-    } catch (e) {
-        console.error("Eroare:", e);
-        updateStatus(false);
-        // Ascundem overlay-ul chiar și pe eroare ca să poți folosi butoanele
-        document.getElementById('loadingOverlay').style.display = 'none';
-    }
-}
-
-// REPARARE: Oprim modul live când userul alege un interval manual
-function setRange(hours) {
-    const end = new Date();
-    const start = new Date(end.getTime() - (hours * 3600000));
-    
-    fpFrom.setDate(start);
-    fpTo.setDate(end);
-    
-    // Dezactivăm live scroll ca să nu sară înapoi la "acum"
-    document.getElementById('liveScroll').checked = false;
-    applyFilters();
-}
-
-            // Sortare Cronologica (Vechi -> Nou)
             rawData.sort((a, b) => a.timestampObj - b.timestampObj);
 
-            // LOGICA CRITICA PENTRU LIVE UPDATE:
-            // Daca suntem in mod Live, "Impingem" data de final (To Date) la momentul curent
-            // Altfel, datele noi ar fi filtrate pentru ca depasesc timpul selectat initial.
+            // REPARARE: Nu mai forțăm data dacă userul a debifat Live Scroll
             if (document.getElementById('liveScroll').checked) {
-                fpTo.setDate(new Date());
+                fpTo.setDate(new Date()); 
             }
 
-            // Actualizare UI
             document.getElementById('loadingOverlay').style.display = 'none';
             updateStatus(true);
-            updateDashboardCards(); // Update KPI Cards
-            applyFilters();         // Update Grafic si Tabel
+            updateDashboardCards(); 
+            applyFilters(); 
 
         } catch (e) {
-            console.error("Eroare la preluarea datelor:", e);
+            console.error("Eroare:", e);
             updateStatus(false);
-        } finally {
-            // ACEASTA ESTE LINIA MAGICĂ
-            // Se execută ORICUM, chiar dacă e bine, chiar dacă e rău
+            // Ascundem overlay-ul chiar și pe eroare ca să poți folosi butoanele
             document.getElementById('loadingOverlay').style.display = 'none';
         }
+    }
+
+    // REPARARE: Oprim modul live când userul alege un interval manual
+    function setRange(hours) {
+        const end = new Date();
+        const start = new Date(end.getTime() - (hours * 3600000));
+        
+        fpFrom.setDate(start);
+        fpTo.setDate(end);
+        
+        // Dezactivăm live scroll ca să nu sară înapoi la "acum"
+        document.getElementById('liveScroll').checked = false;
+        applyFilters();
     }
 
     function startRefreshTimer() {
@@ -912,4 +886,5 @@ function setRange(hours) {
 </body>
 
 </html>
+
 
