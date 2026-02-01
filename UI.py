@@ -44,6 +44,7 @@ def get_sensor_data():
 
         # 2. Convert to JSON-friendly format
         data = []
+        # În UI.py pe Railway:
         for row in rows:
             data.append({
                 "id": row[0],
@@ -52,8 +53,7 @@ def get_sensor_data():
                 "mq2": row[3],
                 "mq9": row[4],
                 "mq135": row[5],
-                # Force timestamp to string to avoid JavaScript parsing errors
-                "timestamp": str(row[6]) 
+                "timestamp": str(row[6]) # Asigură-te că indexul 6 este timestamp-ul
             })
 
         conn.close()
