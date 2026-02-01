@@ -506,50 +506,61 @@
     });
 
     // --- FUNCTII DE FETCHING (COMUNICARE CU SERVERUL) ---
-    async function fetchData() {
-        try {
-            // TEHNICA "CACHE BUSTING":
-            // Adaugam parametrul ?t=timestamp pentru a forta browserul 
-            // sa nu foloseasca versiunea cached a JSON-ului.
-            const url = '/api/sensor_data?t=' + new Date().getTime();
-            
-            const response = await fetch(url);
-            
-            if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
-            
-            const json = await response.json();
-            
-            // Procesare si Normalizare Date
-            rawData = json.map(r => {
-                let item = {};
-                // Suport atat pentru Array (Postgres Tuple) cat si JSON Object
-                if (Array.isArray(r)) {
-                    item = { 
-                        id: r[0], 
-                        temperature: r[1], 
-                        humidity: r[2], 
-                        mq2: r[3], 
-                        mq9: r[4], 
-                        mq135: r[5], 
-                        timestamp: r[6] 
-                    };
-                } else {
-                    item = r;
-                }
+async function fetchData() {
+    try {
+        // Cache busting pentru a forța date noi
+        const url = '/api/sensor_data?t=' + new Date().getTime();
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
+        
+        const json = await response.json();
+        
+        // Mapare corectă conform structurii tale din server.py
+        rawData = json.map(r => {
+            let item = Array.isArray(r) ? { 
+                id: r[0], temperature: r[1], humidity: r[2], 
+                mq2: r[3], mq9: r[4], mq135: r[5], timestamp: r[6] 
+            } : r;
 
-                // Conversii numerice de siguranta
-                item.temperature = item.temperature ? parseFloat(item.temperature) : null;
-                item.humidity = item.humidity ? parseFloat(item.humidity) : null;
-                item.mq2 = parseInt(item.mq2) || 0;
-                item.mq9 = parseInt(item.mq9) || 0;
-                item.mq135 = parseInt(item.mq135) || 0;
-                
-                // Obiect Date JavaScript
-                item.timestampObj = new Date(item.timestamp); 
-                item.timestampString = item.timestampObj.toLocaleString("ro-RO", {hour12: false});
-                
-                return item;
-            });
+            item.temperature = parseFloat(item.temperature) || 0;
+            item.humidity = parseFloat(item.humidity) || 0;
+            item.timestampObj = new Date(item.timestamp); 
+            item.timestampString = item.timestampObj.toLocaleString("ro-RO");
+            return item;
+        });
+
+        rawData.sort((a, b) => a.timestampObj - b.timestampObj);
+
+        // REPARARE: Nu mai forțăm data dacă userul a debifat Live Scroll
+        if (document.getElementById('liveScroll').checked) {
+            fpTo.setDate(new Date()); 
+        }
+
+        document.getElementById('loadingOverlay').style.display = 'none';
+        updateStatus(true);
+        updateDashboardCards(); 
+        applyFilters(); 
+
+    } catch (e) {
+        console.error("Eroare:", e);
+        updateStatus(false);
+        // Ascundem overlay-ul chiar și pe eroare ca să poți folosi butoanele
+        document.getElementById('loadingOverlay').style.display = 'none';
+    }
+}
+
+// REPARARE: Oprim modul live când userul alege un interval manual
+function setRange(hours) {
+    const end = new Date();
+    const start = new Date(end.getTime() - (hours * 3600000));
+    
+    fpFrom.setDate(start);
+    fpTo.setDate(end);
+    
+    // Dezactivăm live scroll ca să nu sară înapoi la "acum"
+    document.getElementById('liveScroll').checked = false;
+    applyFilters();
+}
 
             // Sortare Cronologica (Vechi -> Nou)
             rawData.sort((a, b) => a.timestampObj - b.timestampObj);
@@ -901,3 +912,4 @@
 </body>
 
 </html>
+
